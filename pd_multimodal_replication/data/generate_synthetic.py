@@ -188,7 +188,7 @@ def main():
     ap.add_argument("--sensor-seconds", type=float, default=30.0)
     ap.add_argument("--spiral-subjects", type=int, default=40, help="per class")
     ap.add_argument("--spirals-per-subject", type=int, default=4)
-    ap.add_argument("--video-subjects", type=int, default=25, help="per class")
+    ap.add_argument("--video-subjects", type=int, default=40, help="per class")
     ap.add_argument("--clips-per-subject", type=int, default=8)
     a = ap.parse_args()
     rng = np.random.default_rng(a.seed)
