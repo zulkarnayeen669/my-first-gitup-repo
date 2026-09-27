@@ -1,0 +1,5 @@
+Modality,Model,Accuracy,Precision,Recall,F1-Score,ROC-AUC,TPR,TNR
+Sensor,LSTM,80.00%,87.50%,70.00%,77.78%,0.879,70.00%,90.00%
+Spiral,2D CNN,82.83%,91.21%,72.67%,80.89%,0.886,72.67%,93.00%
+Video,3D CNN,87.50%,93.44%,80.67%,86.58%,0.931,80.67%,94.33%
+Fused,Proposed Model,84.33%,87.59%,80.00%,83.62%,0.947,80.00%,88.67%

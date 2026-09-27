@@ -37,6 +37,10 @@ import pandas as pd
 from PIL import Image, ImageDraw
 
 FS = 100  # Hz, sensor and pen sampling rate
+# Domain shift for an "external cohort" (different device / site). 0 = the
+# main cohort. It changes only deterministic factors (no extra random draws),
+# so SHIFT = 0 reproduces the main dataset exactly.
+SHIFT = 0.0
 SEVERITY_P = [0.15, 0.30, 0.30, 0.15, 0.10]  # P(s = 0..4) among PD subjects
 
 
@@ -88,12 +92,13 @@ def gen_sensor_subject(subj, seconds, rng):
     g = rng.normal(size=3)
     g /= np.linalg.norm(g)
     acc = g + vol + np.outer(trem, dirs[0]) + np.outer(trem2, dirs[1])
-    acc += rng.normal(0, 0.03, (n, 3)) + np.cumsum(rng.normal(0, 2e-4, (n, 3)), axis=0)
+    acc += rng.normal(0, 0.03 * (1 + SHIFT), (n, 3)) + np.cumsum(rng.normal(0, 2e-4, (n, 3)), axis=0)
     # gyro (deg/s): rotational component of tremor + voluntary rotation
     gdir = rng.normal(size=3)
     gdir /= np.linalg.norm(gdir)
     gyr = np.outer(amp * 6 * env * np.cos(phase), gdir) + 20 * np.gradient(vol, axis=0) * FS / 10
-    gyr += rng.normal(0, 1.5, (n, 3))
+    gyr *= 1 - 0.25 * SHIFT                               # different gyro gain
+    gyr += rng.normal(0, 1.5 * (1 + SHIFT), (n, 3))
     # magnetometer (uT): orientation dependent, uninformative
     mag = 45 * np.tile(rng.normal(size=3) / 1.7, (n, 1)) + rng.normal(0, 0.8, (n, 3))
     df = pd.DataFrame(np.c_[t, acc, gyr, mag],
@@ -124,7 +129,7 @@ def gen_spiral_trajectory(subj, rng):
     y += 0.015 * np.cos(2 * np.pi * rng.uniform(0.2, 0.6) * t)
     x += rng.normal(0, 0.002, n)
     y += rng.normal(0, 0.002, n)
-    base_p = rng.uniform(0.6, 1.0) * (1 - 0.08 * s)
+    base_p = rng.uniform(0.6, 1.0) * (1 - 0.08 * s) * (1 - 0.3 * SHIFT)  # lighter pen
     p = np.clip(base_p + (0.05 + 0.03 * s) * rng.normal(size=n).cumsum() / np.sqrt(n), 0.2, 1.0)
     return np.c_[x, y, p]
 
@@ -135,7 +140,7 @@ def render_trajectory(traj, size=64, canvas=256):
     d = ImageDraw.Draw(img)
     xy = (traj[:, :2] * 0.48 + 0.5) * canvas
     for i in range(len(xy) - 1):
-        w = max(1, int(round(1 + 3 * traj[i, 2])))
+        w = max(1, int(round(1 + 3 * traj[i, 2] + 2 * SHIFT)))  # thicker nib
         d.line([tuple(xy[i]), tuple(xy[i + 1])], fill=int(90 * (1 - traj[i, 2])), width=w)
     return img.resize((size, size), Image.LANCZOS)
 
@@ -167,14 +172,14 @@ def gen_video_clip(subj, rng, hand, T=16, H=64, fps=15):
         img = bg.copy()
         img[mask] = hand["skin"]
         frames[k] = img
-    frames *= rng.uniform(0.85, 1.15)
-    frames += rng.normal(0, 6, frames.shape)
+    frames *= rng.uniform(0.85, 1.15) * (1 - 0.3 * SHIFT)        # darker camera
+    frames += rng.normal(0, 6 * (1 + SHIFT), frames.shape)
     return np.clip(frames, 0, 255).astype(np.uint8)
 
 
 def random_hand(rng, H=64):
     return dict(cx=H / 2 + rng.normal(0, 3), cy=H / 2 + 6 + rng.normal(0, 3),
-                angle=rng.normal(0, 0.25), pw=rng.uniform(9, 12), ph=rng.uniform(10, 13),
+                angle=rng.normal(0, 0.25), pw=rng.uniform(9, 12) * (1 - 0.2 * SHIFT), ph=rng.uniform(10, 13) * (1 - 0.2 * SHIFT),
                 fw=rng.uniform(1.6, 2.3), fl=rng.uniform(8, 13, 4),
                 skin=rng.uniform(150, 220), bg=rng.uniform(30, 110))
 
@@ -184,6 +189,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "synthetic"))
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--shift", type=float, default=0.0, help="domain shift for an external cohort (e.g. 1.0)")
     ap.add_argument("--sensor-subjects", type=int, default=30, help="per class")
     ap.add_argument("--sensor-seconds", type=float, default=30.0)
     ap.add_argument("--spiral-subjects", type=int, default=40, help="per class")
@@ -191,6 +197,8 @@ def main():
     ap.add_argument("--video-subjects", type=int, default=40, help="per class")
     ap.add_argument("--clips-per-subject", type=int, default=8)
     a = ap.parse_args()
+    global SHIFT
+    SHIFT = a.shift
     rng = np.random.default_rng(a.seed)
     meta = []
 

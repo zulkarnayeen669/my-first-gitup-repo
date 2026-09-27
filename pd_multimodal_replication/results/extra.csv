@@ -1,0 +1,5 @@
+Model,accuracy,precision,recall,f1,auc,tnr,tpr
+Unimodal probability averaging,0.9183,0.9404,0.8933,0.9162,0.9825,0.9433,0.8933
+LSTM (own test split),0.7828,0.8684,0.6667,0.7543,0.8601,0.8990,0.6667
+2D CNN (own test split),0.8125,0.8750,0.7292,0.7955,0.8841,0.8958,0.7292
+3D CNN (own test split),0.8594,0.9259,0.7812,0.8475,0.9183,0.9375,0.7812

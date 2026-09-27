@@ -1,0 +1,110 @@
+[data] sensor X(1320, 128, 6)  subjects=60  train/val/test samples = 748/176/396
+[data] spiral X(320, 1, 64, 64)  subjects=80  train/val/test samples = 176/48/96
+[data] video  X(640, 1, 16, 64, 64)  subjects=80  train/val/test samples = 352/96/192
+[data] fused triples train/val/test = 1200/240/600  (3s)
+[unimodal] training LSTM on the sensor modality
+    epoch  1/10  loss 0.6473  val_acc 0.733
+    epoch  2/10  loss 0.6314  val_acc 0.619
+    epoch  3/10  loss 0.5126  val_acc 0.688
+    epoch  4/10  loss 0.4902  val_acc 0.625
+    epoch  5/10  loss 0.4361  val_acc 0.648
+    epoch  6/10  loss 0.3739  val_acc 0.688
+    epoch  7/10  loss 0.4072  val_acc 0.688
+    epoch  8/10  loss 0.3202  val_acc 0.733
+    epoch  9/10  loss 0.2983  val_acc 0.727
+    epoch 10/10  loss 0.2556  val_acc 0.767
+    -> LSTM: fused-test {'accuracy': 0.8, 'precision': 0.875, 'recall': 0.7, 'f1': 0.7777777777777778, 'auc': 0.8795, 'tnr': np.float64(0.9), 'tpr': np.float64(0.7)}
+[unimodal] training 2D CNN on the spiral modality
+    epoch  1/10  loss 0.7095  val_acc 0.500
+    epoch  2/10  loss 0.6990  val_acc 0.500
+    epoch  3/10  loss 0.6901  val_acc 0.562
+    epoch  4/10  loss 0.6874  val_acc 0.667
+    epoch  5/10  loss 0.6215  val_acc 0.708
+    epoch  6/10  loss 0.5421  val_acc 0.688
+    epoch  7/10  loss 0.5233  val_acc 0.792
+    epoch  8/10  loss 0.5258  val_acc 0.750
+    epoch  9/10  loss 0.4763  val_acc 0.792
+    epoch 10/10  loss 0.5491  val_acc 0.729
+    -> 2D CNN: fused-test {'accuracy': 0.8283333333333334, 'precision': 0.9121338912133892, 'recall': 0.7266666666666667, 'f1': 0.8089053803339518, 'auc': 0.8857666666666667, 'tnr': np.float64(0.93), 'tpr': np.float64(0.7266666666666667)}
+[unimodal] training 3D CNN on the video modality
+    epoch  1/10  loss 0.6961  val_acc 0.854
+    epoch  2/10  loss 0.5998  val_acc 0.875
+    epoch  3/10  loss 0.5781  val_acc 0.854
+    epoch  4/10  loss 0.4961  val_acc 0.729
+    epoch  5/10  loss 0.4852  val_acc 0.865
+    epoch  6/10  loss 0.3465  val_acc 0.750
+    epoch  7/10  loss 0.2335  val_acc 0.656
+    epoch  8/10  loss 0.2285  val_acc 0.719
+    epoch  9/10  loss 0.1156  val_acc 0.750
+    epoch 10/10  loss 0.0385  val_acc 0.677
+    -> 3D CNN: fused-test {'accuracy': 0.875, 'precision': 0.9343629343629344, 'recall': 0.8066666666666666, 'f1': 0.8658318425760286, 'auc': 0.9313222222222222, 'tnr': np.float64(0.9433333333333334), 'tpr': np.float64(0.8066666666666666)}
+[proposed] training hybrid GRU-LSTNet + BAM end-to-end on fused triples
+    epoch  1/10  loss 0.2352  val_acc 0.771
+    epoch  2/10  loss 0.1135  val_acc 0.838
+    epoch  3/10  loss 0.0360  val_acc 0.808
+    epoch  4/10  loss 0.0475  val_acc 0.750
+    epoch  5/10  loss 0.0796  val_acc 0.754
+    epoch  6/10  loss 0.0648  val_acc 0.929
+    epoch  7/10  loss 0.0604  val_acc 0.825
+    epoch  8/10  loss 0.0222  val_acc 0.875
+    epoch  9/10  loss 0.0289  val_acc 0.825
+    epoch 10/10  loss 0.0196  val_acc 0.792
+    -> Proposed: {'accuracy': 0.8433333333333334, 'precision': 0.8759124087591241, 'recall': 0.8, 'f1': 0.8362369337979094, 'auc': 0.9474, 'tnr': np.float64(0.8866666666666667), 'tpr': np.float64(0.8)}
+[baselines] handcrafted features + SVM / RF / k-NN / LR
+    -> SVM (RBF): {'accuracy': 0.9533333333333334, 'precision': 0.9197530864197531, 'recall': 0.9933333333333333, 'f1': 0.9551282051282052, 'auc': 0.9982666666666666, 'tnr': np.float64(0.9133333333333333), 'tpr': np.float64(0.9933333333333333)}
+    -> Random Forest: {'accuracy': 0.955, 'precision': 0.9174311926605505, 'recall': 1.0, 'f1': 0.9569377990430622, 'auc': 0.9970777777777777, 'tnr': np.float64(0.91), 'tpr': np.float64(1.0)}
+    -> k-NN (k=5): {'accuracy': 0.985, 'precision': 0.9932203389830508, 'recall': 0.9766666666666667, 'f1': 0.984873949579832, 'auc': 0.9983166666666666, 'tnr': np.float64(0.9933333333333333), 'tpr': np.float64(0.9766666666666667)}
+    -> Logistic Regression: {'accuracy': 0.9416666666666667, 'precision': 0.9051987767584098, 'recall': 0.9866666666666667, 'f1': 0.9441786283891547, 'auc': 0.9954888888888889, 'tnr': np.float64(0.8966666666666666), 'tpr': np.float64(0.9866666666666667)}
+
+### Table II - Performance metrics of the proposed model
+
+| Metric    | Value   |
+|:----------|:--------|
+| Accuracy  | 84.33%  |
+| Precision | 87.59%  |
+| Recall    | 80.00%  |
+| F1-Score  | 83.62%  |
+
+### Table III - Comparison with machine learning models
+
+| Model               | Accuracy   | Precision   | Recall   | F1-Score   |   ROC-AUC | TPR     | TNR    |
+|:--------------------|:-----------|:------------|:---------|:-----------|----------:|:--------|:-------|
+| SVM (RBF)           | 95.33%     | 91.98%      | 99.33%   | 95.51%     |     0.998 | 99.33%  | 91.33% |
+| Random Forest       | 95.50%     | 91.74%      | 100.00%  | 95.69%     |     0.997 | 100.00% | 91.00% |
+| k-NN (k=5)          | 98.50%     | 99.32%      | 97.67%   | 98.49%     |     0.998 | 97.67%  | 99.33% |
+| Logistic Regression | 94.17%     | 90.52%      | 98.67%   | 94.42%     |     0.995 | 98.67%  | 89.67% |
+| Proposed Model      | 84.33%     | 87.59%      | 80.00%   | 83.62%     |     0.947 | 80.00%  | 88.67% |
+
+### Table IV - Comparison across modalities
+
+| Modality   | Model          | Accuracy   | Precision   | Recall   | F1-Score   |   ROC-AUC | TPR    | TNR    |
+|:-----------|:---------------|:-----------|:------------|:---------|:-----------|----------:|:-------|:-------|
+| Sensor     | LSTM           | 80.00%     | 87.50%      | 70.00%   | 77.78%     |     0.879 | 70.00% | 90.00% |
+| Spiral     | 2D CNN         | 82.83%     | 91.21%      | 72.67%   | 80.89%     |     0.886 | 72.67% | 93.00% |
+| Video      | 3D CNN         | 87.50%     | 93.44%      | 80.67%   | 86.58%     |     0.931 | 80.67% | 94.33% |
+| Fused      | Proposed Model | 84.33%     | 87.59%      | 80.00%   | 83.62%     |     0.947 | 80.00% | 88.67% |
+
+### Table V - Inference time per sample (CPU, batch 1) and model complexity
+
+| Model               |   Inference time (ms) | Model type          | Params (M)   |
+|:--------------------|----------------------:|:--------------------|:-------------|
+| SVM (RBF)           |                  0.62 | Classical ML        | -            |
+| Random Forest       |                 65.27 | Ensemble ML         | -            |
+| k-NN (k=5)          |                  0.84 | Instance-based ML   | -            |
+| Logistic Regression |                  0.47 | Linear ML           | -            |
+| LSTM                |                  1.71 | RNN-based DL        | 0.12         |
+| 2D CNN              |                  1.46 | Spatial CNN         | 0.47         |
+| 3D CNN              |                 10.53 | Spatio-temporal CNN | 3.23         |
+| Proposed Model      |                 33.65 | GRU-LSTNet + BAM    | 4.20         |
+
+### Extra - probability-averaging reference and unimodal scores on their own test splits
+
+| Model                          |   accuracy |   precision |   recall |     f1 |    auc |    tnr |    tpr |
+|:-------------------------------|-----------:|------------:|---------:|-------:|-------:|-------:|-------:|
+| Unimodal probability averaging |     0.9183 |      0.9404 |   0.8933 | 0.9162 | 0.9825 | 0.9433 | 0.8933 |
+| LSTM (own test split)          |     0.7828 |      0.8684 |   0.6667 | 0.7543 | 0.8601 | 0.899  | 0.6667 |
+| 2D CNN (own test split)        |     0.8125 |      0.875  |   0.7292 | 0.7955 | 0.8841 | 0.8958 | 0.7292 |
+| 3D CNN (own test split)        |     0.8594 |      0.9259 |   0.7812 | 0.8475 | 0.9183 | 0.9375 | 0.7812 |
+
+
+total time 773s

@@ -177,6 +177,31 @@ def plot_fig6(results, y_true, path):
     plt.close(fig)
 
 
+# --------------------------------------------------------------------------- data
+def prepare_data(data_root, rng, test_size, val_split, n_fused_train, n_fused_test, log=print):
+    """Phase 1: load the three modalities, split each by subject into
+    train/val/test, and build same-class fused triples for every split."""
+    data = dict(sensor=load_sensor(os.path.join(data_root, "sensor")),
+                spiral=load_spiral(os.path.join(data_root, "spiral")),
+                video=load_video(os.path.join(data_root, "video")))
+    splits = {}
+    for m in MODS:
+        d = data[m]
+        tr, te = subject_split(d, test_size, rng)
+        sub = type(d)(d.X[tr], d.y[tr], d.groups[tr])
+        tr2, va2 = subject_split(sub, val_split, rng)
+        splits[m] = dict(train=tr[tr2], val=tr[va2], test=te)
+        log(f"[data] {m:6s} X{tuple(d.X.shape)}  subjects={len(np.unique(d.groups))}  "
+            f"train/val/test samples = {len(tr[tr2])}/{len(tr[va2])}/{len(te)}")
+    ys = [data[m].y for m in MODS]
+    fused = {}
+    for split, n in (("train", n_fused_train), ("val", int(n_fused_train * val_split)), ("test", n_fused_test)):
+        fused[split] = pair_across_modalities([splits[m][split] for m in MODS], ys, n, rng)
+    log(f"[data] fused triples train/val/test = "
+        f"{len(fused['train'][1])}/{len(fused['val'][1])}/{len(fused['test'][1])}")
+    return data, splits, fused
+
+
 # --------------------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser()
@@ -206,27 +231,10 @@ def main():
 
     # ---------------- Phase 1: data preparation
     t0 = time.time()
-    data = dict(sensor=load_sensor(os.path.join(a.data_root, "sensor")),
-                spiral=load_spiral(os.path.join(a.data_root, "spiral")),
-                video=load_video(os.path.join(a.data_root, "video")))
-    splits = {}
-    for m in MODS:
-        d = data[m]
-        tr, te = subject_split(d, a.test_size, rng)
-        sub = type(d)(d.X[tr], d.y[tr], d.groups[tr])
-        tr2, va2 = subject_split(sub, a.val_split, rng)
-        splits[m] = dict(train=tr[tr2], val=tr[va2], test=te)
-        log(f"[data] {m:6s} X{tuple(d.X.shape)}  subjects={len(np.unique(d.groups))}  "
-            f"train/val/test samples = {len(tr[tr2])}/{len(tr[va2])}/{len(te)}")
-    ys = [data[m].y for m in MODS]
-    fused = {}
-    for split, n in (("train", a.n_fused_train), ("val", int(a.n_fused_train * a.val_split)),
-                     ("test", a.n_fused_test)):
-        idx, lab = pair_across_modalities([splits[m][split] for m in MODS], ys, n, rng)
-        fused[split] = (idx, lab)
+    data, splits, fused = prepare_data(a.data_root, rng, a.test_size, a.val_split,
+                                       a.n_fused_train, a.n_fused_test, log)
     y_test = fused["test"][1]
-    log(f"[data] fused triples train/val/test = "
-        f"{len(fused['train'][1])}/{len(fused['val'][1])}/{len(y_test)}  ({time.time() - t0:.0f}s)")
+    log(f"[data] prepared in {time.time() - t0:.0f}s")
 
     T = {m: torch.from_numpy(data[m].X.astype(np.float32)) for m in MODS}
     results = {}
@@ -259,6 +267,8 @@ def main():
                               infer_ms=inference_ms(model, (T[m][:1],)))
         log(f"    -> {title}: fused-test {results[title]['metrics']}")
         encoders[m] = model.encoder
+        os.makedirs(os.path.join(a.out, "checkpoints"), exist_ok=True)
+        torch.save(model.state_dict(), os.path.join(a.out, "checkpoints", f"unimodal_{m}.pt"))
 
     # ---------------- Phases 3-6: fusion + hybrid GRU-LSTNet + BAM, end-to-end
     log("[proposed] training hybrid GRU-LSTNet + BAM end-to-end on fused triples")
@@ -272,6 +282,7 @@ def main():
     t = time.time()
     fit(model, batch_mm, len(fused["train"][1]), len(fused["val"][1]), a.epochs, a.batch_size, a.lr, log)
     prob, _ = predict(model, batch_mm, "test", len(y_test))
+    torch.save(model.state_dict(), os.path.join(a.out, "checkpoints", "proposed_multimodal.pt"))
     one = tuple(T[m][:1] for m in MODS)
     results["Proposed Model"] = dict(prob=prob, metrics=metrics(y_test, prob), params=n_params(model),
                                      train_s=time.time() - t, infer_ms=inference_ms(model, one))

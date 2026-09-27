@@ -1,0 +1,9 @@
+Model,Inference time (ms),Model type,Params (M)
+SVM (RBF),0.62,Classical ML,-
+Random Forest,65.27,Ensemble ML,-
+k-NN (k=5),0.84,Instance-based ML,-
+Logistic Regression,0.47,Linear ML,-
+LSTM,1.71,RNN-based DL,0.12
+2D CNN,1.46,Spatial CNN,0.47
+3D CNN,10.53,Spatio-temporal CNN,3.23
+Proposed Model,33.65,GRU-LSTNet + BAM,4.20
