@@ -66,3 +66,23 @@ def video_features(X):
     return np.concatenate([me.mean(1, keepdims=True), me.std(1, keepdims=True), frac[:, None],
                            sd.mean((1, 2))[:, None], sd.max((1, 2))[:, None],
                            cy.std(1, keepdims=True), cx.std(1, keepdims=True)] + spec, 1)
+
+
+def feature_names():
+    """Names for the columns of [sensor_features | spiral_features | video_features]."""
+    ch = ["ax", "ay", "az", "gx", "gy", "gz"]
+    s = [f"sensor {c} power {a:g}-{b:g}Hz" for a, b in BANDS for c in ch]
+    s += [f"sensor {c} dominant freq" for c in ch] + [f"sensor {c} std" for c in ch]
+    s += [f"sensor {c} mean |diff|" for c in ch] + [f"sensor {c} zero-cross rate" for c in ch]
+    p = ["spiral ink fraction", "spiral max ink", "spiral dark-pixel fraction", "spiral centroid dy",
+         "spiral centroid dx", "spiral gradient mean", "spiral gradient std", "spiral roughness mean",
+         "spiral roughness std", "spiral mean radius"]
+    p += [f"spiral radial profile r={r}" for r in range(46)]
+    p += [f"spiral FFT ({i},{j})" for i in range(8) for j in range(8)]
+    fk = np.fft.rfftfreq(16, 1 / FS_VIDEO)[1:]
+    fm = np.fft.rfftfreq(15, 1 / FS_VIDEO)[1:]
+    v = ["video motion energy mean", "video motion energy std", "video moving-area fraction",
+         "video temporal-std mean", "video temporal-std max", "video centroid-y std", "video centroid-x std"]
+    v += [f"video centroid-y spectrum {f:.1f}Hz" for f in fk] + [f"video centroid-x spectrum {f:.1f}Hz" for f in fk]
+    v += [f"video motion-energy spectrum {f:.1f}Hz" for f in fm]
+    return s + p + v
