@@ -1,0 +1,16 @@
+Rank,Feature,mean |SHAP|
+1,sensor gy dominant freq,0.0387
+2,sensor gx dominant freq,0.0319
+3,sensor gz dominant freq,0.0292
+4,sensor gy power 4-6.5Hz,0.0282
+5,sensor gz power 4-6.5Hz,0.0208
+6,"spiral FFT (1,0)",0.0205
+7,spiral mean radius,0.0178
+8,sensor gx power 4-6.5Hz,0.0172
+9,"spiral FFT (1,1)",0.0154
+10,video moving-area fraction,0.0152
+11,sensor ay dominant freq,0.0146
+12,"spiral FFT (6,0)",0.0143
+13,"spiral FFT (6,1)",0.0140
+14,"spiral FFT (4,1)",0.0131
+15,sensor gx zero-cross rate,0.0129

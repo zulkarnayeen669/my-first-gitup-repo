@@ -1,0 +1,5 @@
+Mode,Class,3-5 Hz,5-7 Hz,7-9 Hz,9-12 Hz,12-25 Hz
+sensor only,PD,-0.462,-0.110,-0.003,+0.003,+0.013
+sensor only,healthy,-0.028,-0.055,-0.077,+0.001,+0.024
+all modalities,PD,-0.098,-0.036,-0.001,+0.000,+0.004
+all modalities,healthy,-0.024,-0.033,-0.048,+0.011,+0.031

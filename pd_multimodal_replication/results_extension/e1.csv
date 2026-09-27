@@ -1,0 +1,11 @@
+Configuration,Seeds,Accuracy (%),F1 (%),Recall (%),ROC-AUC
+LSTM only,1,87.17,86.03,79.00,0.866
+2D CNN only,1,77.00,77.88,81.00,0.900
+3D CNN only,1,87.83,87.48,85.00,0.892
+Late fusion (probability averaging),1,93.50,93.33,91.00,0.979
+Concat + MLP,5,95.37 ± 0.22,95.37 ± 0.23,95.40 ± 0.44,0.988
+Concat + MLP + masking,5,95.63 ± 0.24,95.65 ± 0.25,95.93 ± 0.49,0.989
+GRU-LSTNet + BAM (paper head),5,94.93 ± 1.51,94.87 ± 1.62,94.20 ± 2.84,0.985
+Cross-attention (NCAF),5,95.37 ± 0.39,95.35 ± 0.41,95.13 ± 0.91,0.984
+Cross-attention + masking,5,95.43 ± 0.71,95.42 ± 0.73,95.13 ± 1.13,0.987
+"GRU-LSTNet + BAM, end-to-end (main replication)",1,84.33,83.62,80.00,0.947

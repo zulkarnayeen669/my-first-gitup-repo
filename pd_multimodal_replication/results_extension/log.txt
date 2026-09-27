@@ -1,0 +1,315 @@
+[data] sensor X(1320, 128, 6)  subjects=60  train/val/test samples = 748/176/396
+[data] spiral X(320, 1, 64, 64)  subjects=80  train/val/test samples = 176/48/96
+[data] video  X(640, 1, 16, 64, 64)  subjects=80  train/val/test samples = 352/96/192
+[data] fused triples train/val/test = 1200/240/600
+[encoders] training LSTM (no checkpoint found)
+    epoch  1/10  loss 0.6425  val_acc 0.750
+    epoch  2/10  loss 0.5355  val_acc 0.750
+    epoch  3/10  loss 0.4980  val_acc 0.824
+    epoch  4/10  loss 0.4857  val_acc 0.705
+    epoch  5/10  loss 0.5233  val_acc 0.790
+    epoch  6/10  loss 0.4056  val_acc 0.716
+    epoch  7/10  loss 0.3224  val_acc 0.716
+    epoch  8/10  loss 0.3463  val_acc 0.688
+    epoch  9/10  loss 0.2275  val_acc 0.903
+    epoch 10/10  loss 0.2520  val_acc 0.716
+[encoders] training 2D CNN (no checkpoint found)
+    epoch  1/10  loss 0.7109  val_acc 0.500
+    epoch  2/10  loss 0.6910  val_acc 0.500
+    epoch  3/10  loss 0.6578  val_acc 0.646
+    epoch  4/10  loss 0.6380  val_acc 0.667
+    epoch  5/10  loss 0.5646  val_acc 0.750
+    epoch  6/10  loss 0.5192  val_acc 0.750
+    epoch  7/10  loss 0.5121  val_acc 0.729
+    epoch  8/10  loss 0.4654  val_acc 0.771
+    epoch  9/10  loss 0.5161  val_acc 0.708
+    epoch 10/10  loss 0.4695  val_acc 0.771
+[encoders] training 3D CNN (no checkpoint found)
+    epoch  1/10  loss 0.6966  val_acc 0.896
+    epoch  2/10  loss 0.5925  val_acc 0.865
+    epoch  3/10  loss 0.6267  val_acc 0.760
+    epoch  4/10  loss 0.6498  val_acc 0.833
+    epoch  5/10  loss 0.5536  val_acc 0.729
+    epoch  6/10  loss 0.4358  val_acc 0.833
+    epoch  7/10  loss 0.5203  val_acc 0.740
+    epoch  8/10  loss 0.3495  val_acc 0.677
+    epoch  9/10  loss 0.4180  val_acc 0.688
+    epoch 10/10  loss 0.2513  val_acc 0.719
+[encoders] embeddings ready (106s)
+[ablation] Concat + MLP                     acc 0.9537 +- 0.0022  auc 0.9877
+[ablation] Concat + MLP + masking           acc 0.9563 +- 0.0024  auc 0.9886
+[ablation] GRU-LSTNet + BAM (paper head)    acc 0.9493 +- 0.0151  auc 0.9848
+[ablation] Cross-attention (NCAF)           acc 0.9537 +- 0.0039  auc 0.9836
+[ablation] Cross-attention + masking        acc 0.9543 +- 0.0071  auc 0.9874
+[missing modality] {
+ "Concat + MLP": {
+  "all": 0.95,
+  "no sensor": 0.8516666666666667,
+  "no spiral": 0.9116666666666666,
+  "no video": 0.9083333333333333
+ },
+ "Concat + MLP + masking": {
+  "all": 0.9583333333333334,
+  "no sensor": 0.935,
+  "no spiral": 0.935,
+  "no video": 0.9233333333333333
+ },
+ "GRU-LSTNet + BAM (paper head)": {
+  "all": 0.9583333333333334,
+  "no sensor": 0.9366666666666666,
+  "no spiral": 0.9433333333333334,
+  "no video": 0.9033333333333333
+ },
+ "Cross-attention (NCAF)": {
+  "all": 0.9466666666666667,
+  "no sensor": 0.92,
+  "no spiral": 0.9433333333333334,
+  "no video": 0.9266666666666666
+ },
+ "Cross-attention + masking": {
+  "all": 0.9533333333333334,
+  "no sensor": 0.9016666666666666,
+  "no spiral": 0.9283333333333333,
+  "no video": 0.9266666666666666
+ },
+ "Late fusion (probability averaging)": {
+  "all": 0.935,
+  "no sensor": 0.85,
+  "no spiral": 0.8733333333333333,
+  "no video": 0.9066666666666666
+ }
+}
+[noisy modality] {
+ "sensor": {
+  "Concat + MLP": 0.515,
+  "Concat + MLP + masking": 0.515,
+  "GRU-LSTNet + BAM (paper head)": 0.52,
+  "Cross-attention (NCAF)": 0.5183333333333333,
+  "Cross-attention + masking": 0.5183333333333333,
+  "NCAF attention to sensor (clean)": 0.46961334347724915,
+  "NCAF attention to sensor (noisy)": 0.5429906249046326
+ },
+ "spiral": {
+  "Concat + MLP": 0.945,
+  "Concat + MLP + masking": 0.9566666666666667,
+  "GRU-LSTNet + BAM (paper head)": 0.9566666666666667,
+  "Cross-attention (NCAF)": 0.9466666666666667,
+  "Cross-attention + masking": 0.95,
+  "NCAF attention to spiral (clean)": 0.24561361968517303,
+  "NCAF attention to spiral (noisy)": 0.23493048548698425
+ },
+ "video": {
+  "Concat + MLP": 0.935,
+  "Concat + MLP + masking": 0.9516666666666667,
+  "GRU-LSTNet + BAM (paper head)": 0.955,
+  "Cross-attention (NCAF)": 0.935,
+  "Cross-attention + masking": 0.9483333333333334,
+  "NCAF attention to video (clean)": 0.2847730219364166,
+  "NCAF attention to video (noisy)": 0.2774665057659149
+ }
+}
+[xai] {
+ "attention_mean": [
+  [
+   0.5686097741127014,
+   0.15517288446426392,
+   0.27621763944625854
+  ],
+  [
+   0.4191795289516449,
+   0.19624732434749603,
+   0.3845731019973755
+  ],
+  [
+   0.4210510849952698,
+   0.38542085886001587,
+   0.19352838397026062
+  ]
+ ],
+ "attention_mean_pd": [
+  [
+   0.5672144889831543,
+   0.20996129512786865,
+   0.22282402217388153
+  ],
+  [
+   0.3330468535423279,
+   0.2651120126247406,
+   0.4018411636352539
+  ],
+  [
+   0.3610047698020935,
+   0.4614512622356415,
+   0.17754392325878143
+  ]
+ ],
+ "attention_mean_hc": [
+  [
+   0.5700043439865112,
+   0.10038440674543381,
+   0.32961103320121765
+  ],
+  [
+   0.5053125023841858,
+   0.12738248705863953,
+   0.3673049509525299
+  ],
+  [
+   0.4810972511768341,
+   0.309390127658844,
+   0.2095126509666443
+  ]
+ ],
+ "modality_importance": {
+  "attention": [
+   0.46961334347724915,
+   0.24561360478401184,
+   0.2847729027271271
+  ],
+  "saliency": [
+   0.5568190217018127,
+   0.2233991026878357,
+   0.21978192031383514
+  ],
+  "hybrid": [
+   0.5132163763046265,
+   0.23450630903244019,
+   0.25227731466293335
+  ]
+ },
+ "top_modality_agreement_attention_vs_saliency": 0.65,
+ "faithfulness": {
+  "attention only (lambda=1)": {
+   "delta_p_remove_top": 0.17305251955986023,
+   "delta_p_remove_bottom": 0.016563698649406433
+  },
+  "hybrid (lambda=0.5)": {
+   "delta_p_remove_top": 0.16389618813991547,
+   "delta_p_remove_bottom": 0.023286066949367523
+  },
+  "saliency only (lambda=0)": {
+   "delta_p_remove_top": 0.1303318589925766,
+   "delta_p_remove_bottom": 0.02521781623363495
+  },
+  "random ranking": {
+   "delta_p_remove_top": 0.06789693236351013,
+   "delta_p_remove_bottom": 0.0688660740852356
+  }
+ }
+}
+[xai] grad-cam + frequency: {
+ "gradcam_spiral": {
+  "share_on_ink": 0.4997125267982483,
+  "ink_area_share": 0.40890706380208336,
+  "ratio": 1.2220687071332081
+ },
+ "gradcam_video": {
+  "share_on_moving_hand": 0.23294968903064728,
+  "region_area_share": 0.15011088053385416,
+  "ratio": 1.5518507932415377
+ },
+ "sensor_frequency_occlusion": {
+  "sensor only": {
+   "PD": {
+    "3-5 Hz": -0.4623714089393616,
+    "5-7 Hz": -0.10979533940553665,
+    "7-9 Hz": -0.002691165078431368,
+    "9-12 Hz": 0.002843128750100732,
+    "12-25 Hz": 0.012623067013919353
+   },
+   "healthy": {
+    "3-5 Hz": -0.028294535353779793,
+    "5-7 Hz": -0.05544615536928177,
+    "7-9 Hz": -0.07683667540550232,
+    "9-12 Hz": 0.000669336412101984,
+    "12-25 Hz": 0.024157624691724777
+   }
+  },
+  "all modalities": {
+   "PD": {
+    "3-5 Hz": -0.09808048605918884,
+    "5-7 Hz": -0.036252498626708984,
+    "7-9 Hz": -0.0007299248245544732,
+    "9-12 Hz": 0.0002940795966424048,
+    "12-25 Hz": 0.004381564445793629
+   },
+   "healthy": {
+    "3-5 Hz": -0.02417685277760029,
+    "5-7 Hz": -0.03326338902115822,
+    "7-9 Hz": -0.04842875152826309,
+    "9-12 Hz": 0.011056187562644482,
+    "12-25 Hz": 0.031400732696056366
+   }
+  }
+ }
+}
+[shap] {
+ "shap_top_features": [
+  [
+   "sensor gy dominant freq",
+   0.038748624961524106
+  ],
+  [
+   "sensor gx dominant freq",
+   0.03188261334725346
+  ],
+  [
+   "sensor gz dominant freq",
+   0.029247226627601753
+  ],
+  [
+   "sensor gy power 4-6.5Hz",
+   0.028172071658806256
+  ],
+  [
+   "sensor gz power 4-6.5Hz",
+   0.02082145405288063
+  ],
+  [
+   "spiral FFT (1,0)",
+   0.020482983901253197
+  ],
+  [
+   "spiral mean radius",
+   0.017761054440123037
+  ],
+  [
+   "sensor gx power 4-6.5Hz",
+   0.017246512622929873
+  ],
+  [
+   "spiral FFT (1,1)",
+   0.015351704277023618
+  ],
+  [
+   "video moving-area fraction",
+   0.015207641433001896
+  ],
+  [
+   "sensor ay dominant freq",
+   0.01457087228891753
+  ],
+  [
+   "spiral FFT (6,0)",
+   0.014262152610127638
+  ],
+  [
+   "spiral FFT (6,1)",
+   0.01399468303183793
+  ],
+  [
+   "spiral FFT (4,1)",
+   0.013118170510412858
+  ],
+  [
+   "sensor gx zero-cross rate",
+   0.012875275604179979
+  ]
+ ],
+ "shap_modality_share": {
+  "sensor": 0.49457846035667186,
+  "spiral": 0.4073819408190308,
+  "video": 0.09803959882429718
+ }
+}
+[cross-cohort] Concat + MLP: internal test 0.950/0.988, direct transfer 0.835/0.928, domain adaptation 0.840/0.941, transfer learning 0.882/0.956

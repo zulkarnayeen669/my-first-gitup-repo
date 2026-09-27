@@ -1,0 +1,6 @@
+Model,Sensor corrupted,Spiral corrupted,Video corrupted
+Concat + MLP,51.5,94.5,93.5
+Concat + MLP + masking,51.5,95.7,95.2
+GRU-LSTNet + BAM (paper head),52.0,95.7,95.5
+Cross-attention (NCAF),51.8,94.7,93.5
+Cross-attention + masking,51.8,95.0,94.8

@@ -1,0 +1,4 @@
+Model,internal test,direct transfer,domain adaptation,transfer learning
+Concat + MLP,95.0 / 0.988,83.5 / 0.928,84.0 / 0.941,88.2 / 0.956
+GRU-LSTNet + BAM (paper head),95.8 / 0.989,86.2 / 0.928,85.2 / 0.948,90.8 / 0.974
+Cross-attention + masking,95.3 / 0.986,84.8 / 0.919,86.0 / 0.932,90.0 / 0.974

@@ -1,0 +1,7 @@
+Model,all,no sensor,no spiral,no video
+Concat + MLP,95.0,85.2,91.2,90.8
+Concat + MLP + masking,95.8,93.5,93.5,92.3
+GRU-LSTNet + BAM (paper head),95.8,93.7,94.3,90.3
+Cross-attention (NCAF),94.7,92.0,94.3,92.7
+Cross-attention + masking,95.3,90.2,92.8,92.7
+Late fusion (probability averaging),93.5,85.0,87.3,90.7

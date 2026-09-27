@@ -13,14 +13,19 @@ four classical-ML baselines, and every table/figure of the results section (Tabl
 ```
 pd_multimodal_replication/
 ├── run_replication.py          # the whole experiment, A → Z (Phases 1–6 + baselines + tables + figures)
+├── run_extension.py            # extension: explainable AI + cross-modal attention (after NCAF, see end)
 ├── src/
 │   ├── datasets.py             # loaders for the 3 datasets (real formats), preprocessing, subject-wise split, cross-cohort pairing
 │   ├── models.py               # SensorLSTM, Spiral2DCNN, Video3DCNN, BAM1D, LSTNet, HybridGRULSTNetBAM, MultimodalNet
-│   └── features.py             # handcrafted features for SVM / RF / k-NN / LR
+│   ├── features.py             # handcrafted features for SVM / RF / k-NN / LR (+ names for SHAP)
+│   ├── ncaf.py                 # extension: cross-modal attention fusion with modality masking
+│   └── xai.py                  # extension: attention, saliency, hybrid map, Grad-CAM 2-D/3-D, frequency occlusion
 ├── data/
 │   ├── generate_synthetic.py   # seeded simulator producing all three datasets in their real file formats
-│   └── synthetic/              # the generated datasets (committed, ~27 MB)
-├── results/                    # tables.md, table_*.csv, fig5_metrics.png, fig6_confusion_roc.png, results.json, log.txt
+│   ├── synthetic/              # the generated datasets (committed, ~37 MB)
+│   └── synthetic_external/     # domain-shifted external cohort for cross-cohort tests (~14 MB)
+├── results/                    # replication: tables.md, table_*.csv, fig5_metrics.png, fig6_confusion_roc.png, log.txt
+├── results_extension/          # extension: tables.md, e*.csv, fig_e1…e9 *.png, results.json, log.txt
 └── requirements.txt
 ```
 
@@ -31,7 +36,7 @@ pip install -r requirements.txt
 python data/generate_synthetic.py          # (optional) re-creates data/synthetic exactly (seed 0)
 python run_replication.py --data-root data/synthetic --out results
 ```
-Runs on CPU in about 15–25 min (4 cores); the 3-D CNN dominates.
+Runs on CPU in about 13 min (4 cores); the end-to-end fusion training dominates.
 
 ## About the datasets — please read
 
@@ -53,6 +58,8 @@ healthy physiological tremor (8–12 Hz, tiny), enhanced physiological tremor in
 PD rest tremor (3.5–7 Hz) with amplitude growing with a UPDRS-like severity score 0–4 (score 0 = no visible
 tremor), tremor waxing/waning, bradykinesia, micrographia and unstable pen pressure. The class overlap
 was calibrated so that single-modality accuracy lands roughly where the paper reports it (≈80–88 %).
+The main cohort has 30 PD + 30 control sensor subjects, 40 + 40 spiral subjects (4 drawings each) and
+40 + 40 video subjects (8 clips each).
 
 ### Using the real data
 Put the downloads under one root and run `python run_replication.py --data-root data/real`:
@@ -113,4 +120,123 @@ Sensor sampling rate is assumed to be 100 Hz (`load_sensor(fs=…)` to change).
 
 ## Results (synthetic data, seed 42)
 
-RESULTS_PLACEHOLDER
+All numbers are on the **synthetic** datasets (see above), on one shared test set of 600 fused triples
+built only from held-out subjects. Full tables: [`results/tables.md`](results/tables.md); figures:
+[`results/fig5_metrics.png`](results/fig5_metrics.png), [`results/fig6_confusion_roc.png`](results/fig6_confusion_roc.png).
+
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | Paper accuracy |
+|---|---|---|---|---|---|---|
+| SVM (RBF) | 95.3 % | 92.0 % | 99.3 % | 95.5 % | 0.998 | 75.3 % |
+| Random Forest | 95.5 % | 91.7 % | 100 % | 95.7 % | 0.997 | 78.1 % |
+| k-NN (k=5) | 98.5 % | 99.3 % | 97.7 % | 98.5 % | 0.998 | 70.4 % |
+| Logistic Regression | 94.2 % | 90.5 % | 98.7 % | 94.4 % | 0.995 | 72.8 % |
+| Sensor – LSTM | 80.0 % | 87.5 % | 70.0 % | 77.8 % | 0.880 | 84.5 % |
+| Spiral – 2-D CNN | 82.8 % | 91.2 % | 72.7 % | 80.9 % | 0.886 | 81.2 % |
+| Video – 3-D CNN | 87.5 % | 93.4 % | 80.7 % | 86.6 % | 0.931 | 86.0 % |
+| **Proposed GRU-LSTNet + BAM (end-to-end, paper protocol)** | **84.3 %** | 87.6 % | 80.0 % | 83.6 % | 0.947 | **94.0 %** |
+| Averaging the three unimodal probabilities (no learned fusion) | 91.8 % | 94.0 % | 89.3 % | 91.6 % | 0.983 | – |
+
+What this says:
+
+1. **The unimodal subnetworks replicate** — sizes match Table V and accuracies land in the paper's range.
+2. **The paper's headline result does not replicate here.** Trained end-to-end exactly as described
+   (10 epochs, batch 8, lr 1e-3), the fused model overfits: training loss reaches 0.02 while validation
+   accuracy swings between 75 % and 93 %. It ends *below* the video model alone and below plain probability
+   averaging. The fix is in the extension below: with the encoders frozen, the same head reaches 94.9 %.
+3. **Classical ML wins on this data**, but that is a synthetic-data caveat: the simulator generates tremor as
+   exactly the band-power / dominant-frequency signal those features measure. Do not read it as a claim about
+   real patients.
+4. Table V: the proposed model has 4.2 M parameters and 33.7 ms CPU inference per sample (paper: 2.1 M, 7.6 ms
+   on unspecified hardware).
+
+CPU training is multithreaded and not bit-for-bit deterministic, so re-running gives slightly different
+numbers (±1–3 points for the deep models).
+
+---
+
+# Extension — explainable AI and cross-modal attention (after NCAF, Gujjeti et al. 2026)
+
+> S. Gujjeti et al., **"NeuroCrossAttention fusion for multimodal explainable early diagnosis of
+> neurodegenerative diseases"**, *Discover Computing* 29:329, 2026. doi:10.1007/s10791-026-10200-2
+
+This part is **not in the replicated paper**. It adds the NCAF paper's explainability module and
+cross-modal attention fusion to the tremor model. Code: [`src/xai.py`](src/xai.py),
+[`src/ncaf.py`](src/ncaf.py), [`run_extension.py`](run_extension.py). Output:
+[`results_extension/`](results_extension/) (all tables in [`tables.md`](results_extension/tables.md)).
+
+```bash
+python data/generate_synthetic.py --out data/synthetic_external --seed 1 --shift 1.0 \
+    --sensor-subjects 20 --spiral-subjects 20 --video-subjects 15 --clips-per-subject 6   # (already committed)
+python run_extension.py            # ~25 min on 4 CPU cores
+```
+
+**Model explained:** three frozen pre-trained encoders → cross-modal attention fusion
+(α_ij = softmax(Q_i K_jᵀ/√d), H_i = Σ_j α_ij V_j, F = [H_sensor‖H_spiral‖H_video], NCAF Eqs. 3–5) trained with
+modality masking (p = 0.2). 95.4 % test accuracy.
+
+The NCAF paper checks its explanations only by eye. Here the synthetic data has a **known ground truth**
+(PD rest tremor 3.5–7 Hz; enhanced physiological tremor in controls 5.5–9 Hz; the tremor is in the pen line
+and the moving hand), so each explanation is **scored**.
+
+## Explainability results
+
+| Method (NCAF reference) | What it shows | Result | Verdict |
+|---|---|---|---|
+| Sensor frequency occlusion | Δp(PD) when a band is removed from the sensor window | PD patients: removing **3–5 Hz → −0.46**, 5–7 Hz → −0.11, bands above 7 Hz ≈ 0. Controls: largest drop at **7–9 Hz (−0.08)** | ✅ matches the simulated ground truth exactly |
+| SHAP on handcrafted features (tabular) | top features of the random forest | top 5 = gyro **dominant frequency** (x, y, z) and gyro **4–6.5 Hz band power** | ✅ matches ground truth |
+| Cross-modal attention α (Eq. 3) | which modality each modality attends to | sensor receives 0.47 of attention, video 0.29, spiral 0.25 | consistent with SHAP and saliency (sensor ≈ 0.5 in all three) |
+| Hybrid explanation E = λA + (1−λ)S (Eq. 7) | per-patient modality contributions | see faithfulness below | – |
+| Faithfulness (deletion test) | \|Δp\| when removing the top- vs bottom-ranked modality | attention **0.173** vs 0.017 · hybrid 0.164 vs 0.023 · saliency 0.130 vs 0.025 · random 0.068 vs 0.069 | ✅ all explanations are faithful (≈2.5× random); **the hybrid does not beat attention alone** |
+| 2-D Grad-CAM (spiral) | heat on pen ink vs background | 50 % of CAM mass on ink that covers 41 % of the image (ratio **1.22**) | ⚠️ weak: several PD spirals are explained by image borders |
+| 3-D Grad-CAM (video) | heat on the moving hand | 23 % of CAM mass on a region covering 15 % (ratio **1.55**) | ⚠️ weak: often diffuse or empty |
+| Time saliency (Eq. 6, sensor) | \|gradient × input\| over time | concentrated in the first samples of the window | ⚠️ LSTM boundary artefact; frequency occlusion is the better sensor explanation |
+
+Figures:
+[attention](results_extension/fig_e3_attention.png) ·
+[modality explanations](results_extension/fig_e4_modality_explanations.png) ·
+[spiral Grad-CAM](results_extension/fig_e5_gradcam_spiral.png) ·
+[video Grad-CAM](results_extension/fig_e6_gradcam_video.png) ·
+[sensor explanations](results_extension/fig_e7_sensor_explanations.png) ·
+[SHAP](results_extension/fig_e8_shap.png)
+
+**Take-aways for explainability**
+- Explanations defined on **signal properties** (frequency occlusion, SHAP on spectral features) recovered the
+  true tremor mechanism. Pixel-level Grad-CAM, the NCAF paper's main clinical visual, was the least reliable.
+  Showing a heatmap is not evidence that it is right; it has to be scored against a known ground truth.
+- The NCAF hybrid map (Eq. 7) was not more faithful than attention weights alone in this setting.
+- The NCAF claim that *"the noisier an input is, the lower the attention weights it receives"* **did not hold**:
+  corrupting the sensor with heavy noise *raised* the attention it received (0.47 → 0.54), and every model
+  dropped to ≈ 52 %. Attention weights should not be read as a reliability score.
+
+## Secondary results (fusion ablation, robustness, cross-cohort)
+
+**Fusion ablation, identical frozen encoders, 5 seeds** ([fig](results_extension/fig_e1_ablation.png)):
+
+| Configuration | Accuracy | ROC-AUC |
+|---|---|---|
+| Best single modality (3-D CNN) | 87.8 % | 0.892 |
+| Late fusion (probability averaging) | 93.5 % | 0.979 |
+| Concat + MLP | 95.4 ± 0.2 % | 0.988 |
+| Concat + MLP + masking | 95.6 ± 0.2 % | 0.989 |
+| GRU-LSTNet + BAM (paper head) | 94.9 ± 1.5 % | 0.985 |
+| Cross-attention (NCAF) | 95.4 ± 0.4 % | 0.984 |
+| Cross-attention + masking | 95.4 ± 0.7 % | 0.987 |
+| *GRU-LSTNet + BAM trained end-to-end (main replication)* | *84.3 %* | *0.947* |
+
+The fusion architecture barely matters (all within about 1 point); **freezing the encoders** matters most.
+
+**Missing modality at test time** ([fig](results_extension/fig_e2_missing_modality.png)): modality masking makes
+plain concatenation robust (without the sensor: 85.2 % → 93.5 %). Cross-attention handles a missing input
+reasonably even without masking (≥ 92 %).
+
+**Cross-cohort generalisation** ([fig](results_extension/fig_e9_cross_cohort.png)): the external cohort
+has different subjects and a shifted device/site (sensor noise and gain, pen, lighting, hand size).
+
+| Model | Internal test | Direct transfer | Domain adaptation (unsupervised) | Transfer learning (30 % labelled) |
+|---|---|---|---|---|
+| Concat + MLP | 95.0 % | 83.5 % | 84.0 % | 88.2 % |
+| GRU-LSTNet + BAM | 95.8 % | 86.2 % | 85.2 % | 90.8 % |
+| Cross-attention + masking | 95.3 % | 84.8 % | 86.0 % | 90.0 % |
+
+All models lose about 10 points under domain shift. Fine-tuning the head on 30 % of external subjects recovers
+about half of that. Simple embedding alignment helps little.
