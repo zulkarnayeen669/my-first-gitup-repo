@@ -140,7 +140,7 @@ def _read_video(path, T=16, size=64):
 
 
 def load_video(root, T=16, size=64):
-    """Clips of T=16 grayscale 64x64 frames, per-clip standardised."""
+    """Clips of T=16 grayscale 64x64 frames, static background removed."""
     npz = os.path.join(root, "clips.npz")
     if os.path.exists(npz):
         d = np.load(npz)
@@ -157,8 +157,12 @@ def load_video(root, T=16, size=64):
             y.append(lab)
             g.append(os.path.splitext(os.path.basename(f))[0].split("_")[0])
         X, y, g = np.stack(X), np.array(y), np.array(g)
+    # Remove each clip's static appearance (temporal mean frame) so the network
+    # sees motion only, then apply one global scale so tremor amplitude is kept.
+    # Without this the 3-D CNN memorised subject appearance (val acc ~50%).
     X = X.astype(np.float32)
-    X = (X - X.mean(axis=(1, 2, 3), keepdims=True)) / (X.std(axis=(1, 2, 3), keepdims=True) + 1e-6)
+    X -= X.mean(axis=1, keepdims=True)
+    X /= X.std() + 1e-6
     return Modality(X[:, None], np.asarray(y), np.asarray(g))  # N x 1 x T x H x W (PyTorch layout)
 
 
